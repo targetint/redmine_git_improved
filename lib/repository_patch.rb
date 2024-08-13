@@ -10,9 +10,9 @@ module RepositoryPatch
   end
   module InstanceMethods
     def fetch_repository
-      if git_clone_url.present? && login.present? && password.present? && Setting.plugin_redmine_github_integration['destination_path'].present?
+      if git_clone_url.present? && login.present? && password.present? && Setting.plugin_redmine_git_improved['destination_path'].present?
         begin
-          dest = Setting.plugin_redmine_github_integration['destination_path']
+          dest = Setting.plugin_redmine_git_improved['destination_path']
           credentials = Rugged::Credentials::UserPassword.new(
                           username: login,
                           password: password

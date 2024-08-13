@@ -3,7 +3,7 @@ require 'repositories_helper_patch'
 require 'repository_patch'
 require 'view_repositories_hook'
 require 'repositories_controller_patch'
-Redmine::Plugin.register :redmine_github_integration do
+Redmine::Plugin.register :redmine_git_improved do
   name 'Redmine Github Integration plugin'
   author 'Target Integration'
   description 'This plugin allows you to Integrate github into Redmine'
