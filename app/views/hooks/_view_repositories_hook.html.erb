@@ -1,0 +1,7 @@
+<% if User.current.allowed_to?(:pull_repository, @project) %>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$(".contextual").prepend('<%= link_to 'Pull', fetch_repo_path(@repository) %> | ');
+		});
+	</script>
+<% end %>

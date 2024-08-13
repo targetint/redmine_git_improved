@@ -1,0 +1,7 @@
+<fieldset>
+  <legend>Destination Path</legend>
+  <p>
+    <label for="destination_path">Destination Path</label>
+    <%= text_field_tag 'settings[destination_path]',Setting.plugin_redmine_github_integration['destination_path'].to_s %>
+  </p>
+</fieldset>
