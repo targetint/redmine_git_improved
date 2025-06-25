@@ -22,11 +22,32 @@ module RepositoryPatch
             folder = folder + rand(50).to_s
           end
           Dir.mkdir dest+"/"+folder
-          a = Rugged::Repository.clone_at(git_clone_url, dest+"/"+folder, {
-           credentials: credentials
+          # repo = Rugged::Repository.clone_at(git_clone_url, dest+"/"+folder, {
+          #  credentials: credentials
+          # })
+          repo = Rugged::Repository.clone_at(git_clone_url, dest+"/"+folder, {
+           credentials: credentials, bare: false
           })
-          self.url = a.path
-        rescue
+          # repo = Rugged::Repository.new(repo.path)
+          remote = repo.remotes['origin']
+          # Fetch from origin
+          remote.fetch(credentials: credentials)
+          if repo.branches['main']
+            # repo.checkout('main')
+            # system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B main")
+          elsif repo.branches['origin/main']
+            # repo.checkout('origin/main')
+            # system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B main origin/main")
+          elsif repo.branches['origin/master']
+            repo.checkout('origin/master')
+            system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B master origin/master")
+          elsif repo.branches['master']
+            repo.checkout('master')
+            system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B master master")
+          end 
+          self.url = repo.path
+        rescue => e
+          Rails.logger.error "git_fetch_repository error #{e}"
           errors.add :base, "Cannot fetch the repo, Please check the credentials or contact administrator"
         end
       end
