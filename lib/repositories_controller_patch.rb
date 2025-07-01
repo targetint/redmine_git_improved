@@ -42,7 +42,7 @@ module RepositoriesControllerPatch
       rescue => e
         flash[:error] = "Error in pull repository please contact administrator #{e.message}"
       end
-      redirect_to "/projects/#{@project.identifier}/repository/#{@repository.id}"
+      redirect_to "/projects/#{@project.identifier}/repository/#{@repository.id}?rev=#{rev}"
     end
 
     def find_project_repository_with_patch
@@ -61,8 +61,8 @@ module RepositoriesControllerPatch
        Setting.plugin_redmine_git_improved['destination_path'].present?
        repo = Rugged::Repository.new(@repository.url)
        repo_path = @repository.url.sub(/\.git\/?$/, "")
-      if repo.branches['origin/master']
-        system("cd  #{repo_path}; git checkout -B master origin/master")
+      repo.branches.each do |bch|
+        system("cd  #{repo.path.sub(/\.git\/?$/, "")}; git checkout -B #{bch.name} #{bch.name}")
       end
      end
       @rev = params[:rev].to_s.strip.presence || @repository.default_branch
