@@ -18,11 +18,12 @@ module RepositoriesControllerPatch
         repository_url = @repository.git_clone_url
         remote_url = "https://#{@repository.login}:#{@repository.password}@#{repository_url.sub('https://', '')}"
         directory = @repository.url.sub(".git/","")
-
         # Change to the repository directory
+        rev = params[:rev]
         Dir.chdir(directory) do
           # Pull changes from the remote repository
-          system("git pull #{remote_url}")
+          # system("git pull #{remote_url}")
+          system("cd  #{directory}; git checkout #{rev}; git pull origin")
         end
 
         # Step 2: Get the current branch and the corresponding remote branch
@@ -64,36 +65,7 @@ module RepositoriesControllerPatch
         system("cd  #{repo_path}; git checkout -B master origin/master")
       end
      end
-
       @rev = params[:rev].to_s.strip.presence || @repository.default_branch
-      # raise InvalidRevisionParam unless valid_name?(@rev)
-      if @rev == "(no branch)"
-        if @repository.git_clone_url.present? &&
-          @repository.login.present? &&
-          @repository.password.present? &&
-          Setting.plugin_redmine_git_improved['destination_path'].present?
-          repo = Rugged::Repository.new(@repository.url)
-          repo_path = @repository.url.sub(/\.git\/?$/, "")
-          if repo.branches['main']
-            # repo.checkout('main')
-            system("cd  #{repo_path}; git checkout -B main main")
-          elsif repo.branches['origin/main']
-            # repo.checkout('origin/main')
-            system("cd  #{repo_path}; git checkout -B main origin/main")
-          elsif repo.branches['origin/master']
-            # repo.checkout('origin/master')
-            system("cd  #{repo_path}; git checkout -B master origin/master")
-          elsif repo.branches['master']
-            # repo.checkout('master')
-            system("cd  #{repo_path}; git checkout -B master master")
-          else
-            # repo.checkout(repo.branches.first.name)
-            system("cd  #{repo_path}; git checkout -B #{repo.branches.first.name} #{repo.branches.first.name}")
-          end
-          @rev = params[:rev].to_s.strip.presence || @repository.default_branch
-         end
-      end
-
       @rev_to = params[:rev_to].to_s.strip.presence
       # raise InvalidRevisionParam unless valid_name?(@rev_to)
     rescue ActiveRecord::RecordNotFound

@@ -32,19 +32,9 @@ module RepositoryPatch
           remote = repo.remotes['origin']
           # Fetch from origin
           remote.fetch(credentials: credentials)
-          if repo.branches['main']
-            # repo.checkout('main')
-            # system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B main")
-          elsif repo.branches['origin/main']
-            # repo.checkout('origin/main')
-            # system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B main origin/main")
-          elsif repo.branches['origin/master']
-            repo.checkout('origin/master')
-            system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B master origin/master")
-          elsif repo.branches['master']
-            repo.checkout('master')
-            system("cd  #{url.sub(/\.git\/?$/, "")}; git checkout -B master master")
-          end 
+          repo.branches.each do |bch|
+            system("cd  #{repo.path.sub(/\.git\/?$/, "")}; git checkout -B #{bch.name} #{bch.name}")
+          end
           self.url = repo.path
         rescue => e
           Rails.logger.error "git_fetch_repository error #{e}"
