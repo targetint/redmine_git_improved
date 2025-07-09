@@ -23,7 +23,7 @@ module RepositoriesControllerPatch
         Dir.chdir(directory) do
           # Pull changes from the remote repository
           # system("git pull #{remote_url}")
-          system("cd  #{directory}; git checkout #{rev}; git pull origin")
+          system("cd  #{directory}; git checkout #{rev}; git reset --hard; git pull origin")
         end
 
         # Step 2: Get the current branch and the corresponding remote branch
