@@ -23,8 +23,31 @@ module RepositoriesControllerPatch
         Dir.chdir(directory) do
           # Pull changes from the remote repository
           # system("git pull #{remote_url}")
-          system("cd  #{directory}; git checkout #{rev}; git reset --hard; git pull origin")
+          system("cd  #{directory}; git checkout #{rev}; git reset --hard;")
+          repo = Rugged::Repository.new(directory)
+          remote = repo.remotes["origin"]
+          remote.fetch(
+            credentials: Rugged::Credentials::UserPassword.new(
+              username: @repository.login,
+              password: @repository.password
+            )
+          )
+          remote_branch = repo.references["refs/remotes/#{rev}"]
+          # Fast-forward local branch (e.g., main)
+          local_branch = repo.branches[rev]
+
+          # Set local branch HEAD to remote if it's a fast-forward
+          if repo.descendant_of?(remote_branch.target_id, local_branch.target_id)
+            # Update working directory
+            repo.checkout_tree(remote_branch.target.tree, strategy: :force)
+            repo.references.update("refs/heads/#{rev}", remote_branch.target_id)
+            puts "Fast-forwarded to latest origin/#{rev}."
+          else
+            puts "Cannot fast-forward: local branch has diverged."
+          end
+          # Rails.logger.info "**************#{repo.head.name}***************"
         end
+
 
         # Step 2: Get the current branch and the corresponding remote branch
         # current_branch = repo.branches[repo.head.name.sub('refs/heads/', '')]
