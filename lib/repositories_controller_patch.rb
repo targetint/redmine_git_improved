@@ -32,18 +32,19 @@ module RepositoriesControllerPatch
               password: @repository.password
             )
           )
-          remote_branch = repo.references["refs/remotes/#{rev}"]
+          remote_rev = "origin/#{rev}"
+          remote_branch = repo.references["refs/remotes/#{remote_rev}"]
           # Fast-forward local branch (e.g., main)
-          local_branch = repo.branches[rev]
+          local_branch = repo.branches[remote_rev]
 
           # Set local branch HEAD to remote if it's a fast-forward
           if repo.descendant_of?(remote_branch.target_id, local_branch.target_id)
             # Update working directory
             repo.checkout_tree(remote_branch.target.tree, strategy: :force)
-            repo.references.update("refs/heads/#{rev}", remote_branch.target_id)
-            puts "Fast-forwarded to latest origin/#{rev}."
+            repo.references.update("refs/heads/#{remote_rev}", remote_branch.target_id)
+            # puts "Fast-forwarded to latest origin/#{remote_rev}."
           else
-            puts "Cannot fast-forward: local branch has diverged."
+            # puts "Cannot fast-forward: local branch has diverged."
           end
           # Rails.logger.info "**************#{repo.head.name}***************"
         end
@@ -79,14 +80,19 @@ module RepositoriesControllerPatch
       @path = params[:path].is_a?(Array) ? params[:path].join('/') : params[:path].to_s
 
       if @repository.git_clone_url.present? &&
-       @repository.login.present? &&
-       @repository.password.present? &&
-       Setting.plugin_redmine_git_improved['destination_path'].present?
-       repo = Rugged::Repository.new(@repository.url)
-       repo_path = @repository.url.sub(/\.git\/?$/, "")
-      repo.branches.each do |bch|
-        system("cd  #{repo.path.sub(/\.git\/?$/, "")}; git checkout -B #{bch.name} #{bch.name}")
-      end
+        @repository.login.present? &&
+        @repository.password.present? &&
+        Setting.plugin_redmine_git_improved['destination_path'].present?
+        repo = Rugged::Repository.new(@repository.url)
+        repo_path = @repository.url.sub(/\.git\/?$/, "")
+        local_branch_names = repo.branches.each(:local).map(&:name)
+        repo.branches.each(:remote) do |remote_branch|
+          local_equivalent = remote_branch.name.sub('origin/', '')
+          next if local_equivalent.downcase == 'head'
+          unless local_branch_names.include?(local_equivalent)
+            system("cd  #{repo.path.sub(/\.git\/?$/, "")}; git checkout -B #{local_equivalent} #{remote_branch.name}")
+          end
+        end
      end
       @rev = params[:rev].to_s.strip.presence || @repository.default_branch
       @rev_to = params[:rev_to].to_s.strip.presence

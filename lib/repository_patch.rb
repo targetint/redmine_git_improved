@@ -6,6 +6,7 @@ module RepositoryPatch
         # , :if => Proc.new { |repo| repo.new_record? && repo.repository_scm == 'Git'}
         # alias_method :git_field_tags_without_patch, :git_field_tags
         # alias_method :git_field_tags, :git_field_tags_with_patch
+        after_destroy :remove_repo_folder
     end
   end
   module InstanceMethods
@@ -32,8 +33,13 @@ module RepositoryPatch
           remote = repo.remotes['origin']
           # Fetch from origin
           remote.fetch(credentials: credentials)
-          repo.branches.each do |bch|
-            system("cd  #{repo.path.sub(/\.git\/?$/, "")}; git checkout -B #{bch.name} #{bch.name}")
+          local_branch_names = repo.branches.each(:local).map(&:name)
+          repo.branches.each(:remote) do |remote_branch|
+            local_equivalent = remote_branch.name.sub('origin/', '')
+            next if local_equivalent.downcase == 'head'
+            unless local_branch_names.include?(local_equivalent)
+              system("cd  #{repo.path.sub(/\.git\/?$/, "")}; git checkout -B #{local_equivalent} #{remote_branch.name}")
+            end
           end
           self.url = repo.path
         rescue => e
@@ -41,6 +47,12 @@ module RepositoryPatch
           errors.add :base, "Cannot fetch the repo, Please check the credentials or contact administrator"
         end
       end
+    end
+
+    def remove_repo_folder
+      return if git_clone_url.blank?
+      path = url.sub(/\.git\/?$/, "")
+      system("rm -r -f #{path}")
     end
   end
 end
