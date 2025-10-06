@@ -18,37 +18,25 @@ module RepositoriesControllerPatch
         repository_url = @repository.git_clone_url
         remote_url = "https://#{@repository.login}:#{@repository.password}@#{repository_url.sub('https://', '')}"
         directory = @repository.url.sub(".git/","")
-        # Change to the repository directory
         rev = params[:rev]
         Dir.chdir(directory) do
-          # Pull changes from the remote repository
-          # system("git pull #{remote_url}")
-          system("cd  #{directory}; git checkout #{rev}; git reset --hard;")
           repo = Rugged::Repository.new(directory)
-          remote = repo.remotes["origin"]
+          remote = repo.remotes['origin']
           remote.fetch(
             credentials: Rugged::Credentials::UserPassword.new(
               username: @repository.login,
               password: @repository.password
             )
           )
-          remote_rev = "origin/#{rev}"
-          remote_branch = repo.references["refs/remotes/#{remote_rev}"]
-          # Fast-forward local branch (e.g., main)
-          local_branch = repo.branches[remote_rev]
-
-          # Set local branch HEAD to remote if it's a fast-forward
-          if repo.descendant_of?(remote_branch.target_id, local_branch.target_id)
-            # Update working directory
-            repo.checkout_tree(remote_branch.target.tree, strategy: :force)
-            repo.references.update("refs/heads/#{remote_rev}", remote_branch.target_id)
-            # puts "Fast-forwarded to latest origin/#{remote_rev}."
-          else
-            # puts "Cannot fast-forward: local branch has diverged."
-          end
-          # Rails.logger.info "**************#{repo.head.name}***************"
+          branch_name = rev
+          remote_ref = "refs/remotes/origin/#{branch_name}"
+          local_ref  = "refs/heads/#{branch_name}"
+          remote_commit = repo.references[remote_ref].target_id
+          repo.references.update(local_ref, remote_commit)
+          repo.checkout(branch_name, strategy: :force)
+          head_file = File.join(repo.path, "HEAD")
+          File.write(head_file, "ref: refs/heads/#{branch_name}\n")
         end
-
 
         # Step 2: Get the current branch and the corresponding remote branch
         # current_branch = repo.branches[repo.head.name.sub('refs/heads/', '')]
