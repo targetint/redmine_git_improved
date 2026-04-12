@@ -3,7 +3,7 @@ module RepositoriesHelperPatch
         base.send(:include, InstanceMethods)
 
         base.class_eval do
-            unloadable
+#            unloadable
             alias_method :git_field_tags_without_patch, :git_field_tags
             alias_method :git_field_tags, :git_field_tags_with_patch
         end

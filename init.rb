@@ -11,7 +11,7 @@ Redmine::Plugin.register :redmine_git_improved do
   url 'http://targetintegration.com'
   author_url 'http://targetintegration.com'
 
-  settings default: {}, partial: 'settings/git_settings.html.erb'
+  settings default: {}, partial: 'settings/git_settings'
   Repository.safe_attributes 'git_clone_url'
 
   Redmine::AccessControl.map do |map|
